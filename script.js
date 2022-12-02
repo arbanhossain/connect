@@ -3,7 +3,21 @@
 //
 
 const canvas = document.getElementById('play');
+const h = canvas.height;
+const w = canvas.width;
 let ctx = canvas.getContext('2d');
+
+//
+// --------- CUSTOM CLASSES ---------
+//
+
+// A point
+class Point {
+  constructor(h,w) {
+    this.x = h;
+    this.y = w;
+  }
+}
 
 //
 // --------- GAME CONSTANTS ---------
@@ -21,22 +35,11 @@ const spriteCodes = {
 
 // Game State
 const gameState = {
+  gameWindowStart: new Point(w/128, h/128),
   levelCount: 0,
   levelLayout: null,
   score: 0,
   selected: null,
-}
-
-//
-// --------- CUSTOM CLASSES ---------
-//
-
-// A point
-class Point {
-  constructor(h,w) {
-    this.x = h;
-    this.y = w;
-  }
 }
 
 //
@@ -96,22 +99,22 @@ const getLevel = (n) => {
 
 // Return sprite type at position x, y
 const getSpriteAtPos = (x, y) => {
-  return gameState.levelLayout[Math.floor(x/N)][Math.floor(y/N)];
+  return gameState.levelLayout[Math.floor(y/N)][Math.floor(x/N)];
 }
 
 // Get the mouse position on the canvas AND decide what to do depending on the sprite selected
 const getCursorPosition = (canvas, event) => {
   // Get mouse position
   const rect = canvas.getBoundingClientRect();
-  let x = event.clientX - rect.left;
-  let y = event.clientY - rect.top;
+  let x = event.clientX - rect.left - gameState.gameWindowStart.x*N;
+  let y = event.clientY - rect.top - gameState.gameWindowStart.y*N;
 
   // Get sprite at mouse position
-  let sprite = gameState.levelLayout[Math.floor(x/N)][Math.floor(y/N)];
+  let sprite = gameState.levelLayout[Math.floor(y/N)][Math.floor(x/N)];
 
   if (sprite.type == 'selected') { // If the sprite is already selected, deselect it
     
-    gameState.levelLayout[Math.floor(x/N)][Math.floor(y/N)] = {
+    gameState.levelLayout[Math.floor(y/N)][Math.floor(x/N)] = {
       type: sprite.pastType,
       pastType: null,
       src: spriteCodes[sprite.pastType]
@@ -123,9 +126,9 @@ const getCursorPosition = (canvas, event) => {
   } else if (sprite.type == 0 || sprite.type == 1) { // If the sprite is not selected, and is of a selectable type
     if(gameState.selected != null) { // and if there is already a selected sprite, swap that with this one
       
-      gameState.levelLayout[gameState.selectedPosition.x][gameState.selectedPosition.y] = sprite;
+      gameState.levelLayout[gameState.selectedPosition.y][gameState.selectedPosition.x] = sprite;
 
-      gameState.levelLayout[Math.floor(x/N)][Math.floor(y/N)] = {
+      gameState.levelLayout[Math.floor(y/N)][Math.floor(x/N)] = {
         type: gameState.selected.pastType,
         pastType: null,
         src: spriteCodes[gameState.selected.pastType]
@@ -136,15 +139,15 @@ const getCursorPosition = (canvas, event) => {
 
     } else { // and if there is no selected sprite, set this one as selected
       
-      gameState.levelLayout[Math.floor(x/N)][Math.floor(y/N)] = {
+      gameState.levelLayout[Math.floor(y/N)][Math.floor(x/N)] = {
         type: 'selected',
         pastType: sprite.type,
         src: spriteCodes['selected']
       };
 
       gameState.selectedPosition = new Point(Math.floor(x/N), Math.floor(y/N));
-      gameState.selected = gameState.levelLayout[gameState.selectedPosition.x][gameState.selectedPosition.y];
-      
+      gameState.selected = gameState.levelLayout[gameState.selectedPosition.y][gameState.selectedPosition.x];
+
     }
   } else { // else do nothing
     console.log('nothing');
@@ -165,8 +168,10 @@ const gameLoop = () => {
   
   // Draw the sprites in the level
   for(let i = 0; i < gameState.levelLayout.length; i++) {
+    let y = i + gameState.gameWindowStart.y;
     for(let j = 0; j < gameState.levelLayout[i].length; j++) {
-      drawSprite(ctx, spriteCodes[gameState.levelLayout[i][j].type], new Point(i*N, j*N), N-1, N-1);
+      let x = j + gameState.gameWindowStart.x;
+      drawSprite(ctx, spriteCodes[gameState.levelLayout[i][j].type], new Point(x*N, y*N), N-1, N-1);
     }
   }
   

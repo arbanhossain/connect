@@ -23,6 +23,26 @@ class Point {
 // --------- GAME CONSTANTS ---------
 //
 
+// Game default block/sprite size in pixels
+const N = 32
+
+// Sprite Codes and Sources
+const spriteCodes = {
+  0: './black.png',
+  1: './white.png',
+  selected: './selected.png'
+}
+
+// Game State
+const gameState = {
+  gameWindowStart: new Point(w / 128, h / 128),
+  gridSize: 10,
+  levelCount: 0,
+  levelLayout: null,
+  score: 0,
+  selected: null,
+}
+
 // Debug flag
 const DEBUG = true;
 
@@ -38,33 +58,29 @@ const drawQueue = {
   grid: {
     toDraw: true,
     rectSize: {
-      from: new Point()
+      from: new Point(gameState.gameWindowStart.x * N, gameState.gameWindowStart.y * N),
+      to: new Point((gameState.gameWindowStart.x + gameState.gridSize) * N, (gameState.gameWindowStart.y + gameState.gridSize) * N),
     }
   },
+  background: {
+    toDraw: true,
+    rectSize: {
+      from: new Point(0,0),
+      to: new Point(w, h),
+    }
+  }
 };
-
-// Game default block/sprite size in pixels
-const N = 32
-
-// Sprite Codes and Sources
-const spriteCodes = {
-  0: './black.png',
-  1: './white.png',
-  selected: './selected.png'
-}
-
-// Game State
-const gameState = {
-  gameWindowStart: new Point(w / 128, h / 128),
-  levelCount: 0,
-  levelLayout: null,
-  score: 0,
-  selected: null,
-}
 
 //
 // --------- CONTEXT DRAWING FUNCTIONS ---------
 //
+
+// Draw rectengle between to opposite corners
+const drawRect = (ctx, p0, p1) => {
+  ctx.beginPath();
+  ctx.rect(p0.x, p0.y, p1.x - p0.x, p1.y - p0.y);
+  ctx.stroke();
+}
 
 // Draw a line between 2 points
 const drawLine = (ctx, p0, p1) => {
@@ -141,7 +157,13 @@ const getCursorPosition = (canvas, event) => {
   let y = event.clientY - rect.top - gameState.gameWindowStart.y * N;
 
   // Get sprite at mouse position
-  let sprite = gameState.levelLayout[Math.floor(y / N)][Math.floor(x / N)];
+  let sprite;
+  try {
+    sprite = gameState.levelLayout[Math.floor(y / N)][Math.floor(x / N)];
+  } catch (e) {
+    console.log('Not a sprite position');
+    return null;
+  }
 
   if (sprite.type == 'selected') { // If the sprite is already selected, deselect it
 
@@ -208,10 +230,27 @@ const getCursorPosition = (canvas, event) => {
 //
 
 const gameLoop = () => {
-
+  
   if (gameState.levelLayout == null) {
-    gameState.levelLayout = getLevel(10);
+    gameState.levelLayout = getLevel(gameState.gridSize);
     gameState.levelCount++;
+  }
+
+  if (drawQueue.background.toDraw) {
+    let rect = drawQueue.background.rectSize;
+    ctx.fillStyle = "blue";
+    ctx.fillRect(rect.from.x, rect.from.y, rect.to.x, rect.to.y)
+    drawQueue.background.toDraw = false;
+  }
+  
+  if (drawQueue.levelScore.toDraw) {
+    ctx.fillStyle = "black";
+    let rect = drawQueue.levelScore.rectSize;
+    ctx.clearRect(rect.from.x, rect.from.y, rect.to.x, rect.to.y);
+    ctx.font = '24px Arial';
+    ctx.fillText(`#${gameState.levelCount}`, 10, 25);
+    ctx.fillText(`Score: ${gameState.score}`, 10, 54);
+    drawQueue.levelScore.toDraw = false;
   }
 
   // Draw the sprites in the level
@@ -223,16 +262,11 @@ const gameLoop = () => {
     }
   }
 
-  if (drawQueue.levelScore.toDraw) {
-    let rect = drawQueue.levelScore.rectSize;
-    ctx.clearRect(rect.from.x, rect.from.y, rect.to.x, rect.to.y);
-    ctx.font = '48px Arial';
-    ctx.fillText(`Level: ${gameState.levelCount}`, 10, 50);
-    drawQueue.levelScore.toDraw = false;
-  }
-
   if (DEBUG) {
-
+    for(item in drawQueue) {
+      ctx.strokeStyle = "red";
+      drawRect(ctx, drawQueue[item].rectSize.from, drawQueue[item].rectSize.to);
+    }
   }
 
   // Get next frame

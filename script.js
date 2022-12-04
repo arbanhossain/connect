@@ -60,10 +60,15 @@ const N = 32
 
 // Sprite Codes and Sources
 const spriteCodes = {
-  1: './black.png',
-  0: './white.png',
+  1: './snowflake.png',
+  0: './tree-01.png',
+  2: './santa.png',
+  3: './gift-01.png',
   selected: './selected.png'
 }
+
+// Swappable Types
+const swappable = new Set([0,1,2,3]);
 
 // Game State
 const gameState = {
@@ -91,8 +96,8 @@ const drawQueue = {
   grid: {
     toDraw: true,
     rectSize: {
-      from: new Point(gameState.gameWindowStart.x * N, gameState.gameWindowStart.y * N),
-      to: new Point((gameState.gameWindowStart.x + gameState.gridSize) * N, (gameState.gameWindowStart.y + gameState.gridSize) * N),
+      from: new Point(gameState.gameWindowStart.x * N - 16, gameState.gameWindowStart.y * N - 16),
+      to: new Point((gameState.gameWindowStart.x + gameState.gridSize) * N + 16, (gameState.gameWindowStart.y + gameState.gridSize) * N + 16),
     }
   },
   background: {
@@ -261,7 +266,7 @@ const getCursorPosition = (canvas, event) => {
     gameState.selectedPosition = null;
     gameState.selected = null;
 
-  } else if (sprite.type == 0 || sprite.type == 1) { // If the sprite is not selected, and is of a selectable type
+  } else if (swappable.has(sprite.type)) { // If the sprite is not selected, and is of a selectable type
     if (gameState.selected != null) { // and if there is already a selected sprite
 
       let neighbors = getNeighbors(gameState.selectedPosition.y, gameState.selectedPosition.x); // get neighbors of the selected sprite
@@ -288,6 +293,7 @@ const getCursorPosition = (canvas, event) => {
 
           gameState.score++;
           drawQueue.levelScore.toDraw = true;
+          drawQueue.grid.toDraw = false;
 
           if(evaluateWinCondition()) prepareNext();
 
@@ -348,6 +354,13 @@ const gameLoop = () => {
     drawQueue.levelScore.toDraw = false;
   }
 
+  if (drawQueue.grid.toDraw) {
+    let rect = drawQueue.grid.rectSize;
+    ctx.fillStyle = colors.BG;
+    ctx.fillRect(rect.from.x, rect.from.y, rect.to.x, rect.to.y);
+    drawQueue.grid.toDraw = false;
+  }
+
   // Draw the sprites in the level
   for (let i = 0; i < gameState.levelLayout.length; i++) {
     let y = i + gameState.gameWindowStart.y;
@@ -359,7 +372,9 @@ const gameLoop = () => {
 
   if (DEBUG) {
     for (item in drawQueue) {
-      ctx.strokeStyle = "red";
+      if (item == 'background' || item == 'levelScore') continue;
+      ctx.strokeStyle = colors.TEXT;
+      ctx.lineWidth = 8;
       drawRect(ctx, drawQueue[item].rectSize.from, drawQueue[item].rectSize.to);
     }
   }

@@ -170,8 +170,13 @@ const doAlgo = (arr, size, source, destination) => {
   
   for (let i = 0; i<N; i++) {
     for (let j = 0; j<N; j++) {
+      let roll = Math.random();
       if(paths.some(p => p[0] == i && p[1] == j)){
         final[i][j] = 1;
+      } else if (roll < 0.25) {
+        final[i][j] = 2;
+      } else if (roll < 0.5) {
+        final[i][j] = 3;
       }
     }
   }

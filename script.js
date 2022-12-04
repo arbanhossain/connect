@@ -170,7 +170,7 @@ const getLevel = (n) => {
       };
     }
   }
-  return [arr, Math.round(par/2)];
+  return [arr, Math.round(par/2.5)];
 }
 
 // Return sprite type at position x, y
@@ -217,9 +217,14 @@ const evaluateWinCondition = () => {
   }
   c = visited.size;
 
-  if (total == c) console.log('win');
-  
-  return false;
+  return total == c;
+}
+
+const prepareNext = () => {
+  [gameState.levelLayout, gameState.levelPar] = getLevel(gameState.gridSize);
+  gameState.score = 0;
+  gameState.selected = null;
+  gameState.levelCount++;
 }
 
 // Get the mouse position on the canvas AND decide what to do depending on the sprite selected
@@ -278,7 +283,7 @@ const getCursorPosition = (canvas, event) => {
           gameState.score++;
           drawQueue.levelScore.toDraw = true;
 
-          evaluateWinCondition();
+          if(evaluateWinCondition()) prepareNext();
 
           break; // exit the loop
         }
@@ -321,16 +326,17 @@ const gameLoop = () => {
 
   if (drawQueue.background.toDraw) {
     let rect = drawQueue.background.rectSize;
-    ctx.fillStyle = "blue";
+    ctx.fillStyle = "#ffeeb3";
     ctx.fillRect(rect.from.x, rect.from.y, rect.to.x, rect.to.y)
     drawQueue.background.toDraw = false;
   }
 
   if (drawQueue.levelScore.toDraw) {
-    ctx.fillStyle = "black";
     let rect = drawQueue.levelScore.rectSize;
-    ctx.clearRect(rect.from.x, rect.from.y, rect.to.x, rect.to.y);
-    ctx.font = '24px Arial';
+    ctx.fillStyle = "#ffeeb3";
+    ctx.fillRect(rect.from.x, rect.from.y, rect.to.x, rect.to.y);
+    ctx.fillStyle = "black";
+    ctx.font = '24px Notable';
     ctx.fillText(`Lv. ${gameState.levelCount} | Par: ${gameState.levelPar}`, 10, 25);
     ctx.fillText(`Moves: ${gameState.score}`, 10, 55);
     drawQueue.levelScore.toDraw = false;
@@ -363,14 +369,6 @@ const gameLoop = () => {
 // On click event listener
 canvas.addEventListener('mousedown', (e) => {
   getCursorPosition(canvas, e);
-})
-
-document.addEventListener('keydown', (e) => {
-  if (e.code == 'Space') {
-    gameState.levelCount++;
-    drawQueue.levelScore.toDraw = true;
-    //ctx.clearRect(0, 0, w, 100);
-  }
 })
 
 // Start getting frames

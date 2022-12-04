@@ -49,6 +49,12 @@ class Queue {
 // --------- GAME CONSTANTS ---------
 //
 
+// Game Colors
+const colors = {
+  BG: "#ffeeb3",
+  TEXT: "#FE938C",
+}
+
 // Game default block/sprite size in pixels
 const N = 32
 
@@ -326,16 +332,16 @@ const gameLoop = () => {
 
   if (drawQueue.background.toDraw) {
     let rect = drawQueue.background.rectSize;
-    ctx.fillStyle = "#ffeeb3";
+    ctx.fillStyle = colors.BG;
     ctx.fillRect(rect.from.x, rect.from.y, rect.to.x, rect.to.y)
     drawQueue.background.toDraw = false;
   }
 
   if (drawQueue.levelScore.toDraw) {
     let rect = drawQueue.levelScore.rectSize;
-    ctx.fillStyle = "#ffeeb3";
+    ctx.fillStyle = colors.BG;
     ctx.fillRect(rect.from.x, rect.from.y, rect.to.x, rect.to.y);
-    ctx.fillStyle = "black";
+    ctx.fillStyle = colors.TEXT;
     ctx.font = '24px Notable';
     ctx.fillText(`Lv. ${gameState.levelCount} | Par: ${gameState.levelPar}`, 10, 25);
     ctx.fillText(`Moves: ${gameState.score}`, 10, 55);

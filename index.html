@@ -5,11 +5,17 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
+  <script
+  src="https://code.jquery.com/jquery-3.6.1.min.js"
+  integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ="
+  crossorigin="anonymous"></script>
   <title>Connect</title>
 </head>
 <body>
-  <canvas id="play" width="800" height="600"></canvas>
+  <canvas id="play" width="800" height="600" style="z-index:1;"></canvas>
+  <canvas id="canvas" width="800" height="600" style="z-index:2;margin-top:-600px;"></canvas>
   <script src="makePath.js"></script>
   <script src="script.js"></script>
+  <script src="particles.js"></script>
 </body>
 </html>

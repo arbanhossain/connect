@@ -19,6 +19,32 @@ class Point {
   }
 }
 
+// Queue class
+class Queue {
+
+  constructor() {
+    this.items = [];
+  }
+
+  enqueue(element) {
+    this.items.push(element);
+  }
+
+  dequeue() {
+    if (this.isEmpty()) return "Underflow";
+    return this.items.shift();
+  }
+
+  front() {
+    if (this.isEmpty()) return "No elements in Queue";
+    return this.items[0];
+  }
+
+  isEmpty() {
+    return this.items.length == 0;
+  }
+}
+
 //
 // --------- GAME CONSTANTS ---------
 //
@@ -28,8 +54,8 @@ const N = 32
 
 // Sprite Codes and Sources
 const spriteCodes = {
-  0: './black.png',
-  1: './white.png',
+  1: './black.png',
+  0: './white.png',
   selected: './selected.png'
 }
 
@@ -39,6 +65,7 @@ const gameState = {
   gridSize: 10,
   levelCount: 0,
   levelLayout: null,
+  levelPar: null,
   score: 0,
   selected: null,
 }
@@ -52,7 +79,7 @@ const drawQueue = {
     toDraw: true,
     rectSize: {
       from: new Point(0, 0),
-      to: new Point(w/3, 60),
+      to: new Point(w / 3, 65),
     },
   },
   grid: {
@@ -65,7 +92,7 @@ const drawQueue = {
   background: {
     toDraw: true,
     rectSize: {
-      from: new Point(0,0),
+      from: new Point(0, 0),
       to: new Point(w, h),
     }
   }
@@ -118,35 +145,81 @@ const drawSprite = (ctx, imgSrc, pos, height = N, width = N) => {
 // Get neighbors of a given cell
 const getNeighbors = (i, j) => {
   return [
-    new Point(i-1, j),
-    new Point(i+1, j),
-    new Point(i, j-1),
-    new Point(i, j+1),
+    new Point(i - 1, j),
+    new Point(i + 1, j),
+    new Point(i, j - 1),
+    new Point(i, j + 1),
   ]
 }
 
 // Generate a level with given size
 const getLevel = (n) => {
+  let level, par;
+  [level, par] = getJumbled(n - 2);
   arr = [];
   for (let i = 0; i < n; i++) {
     arr.push([]); // Make a row
     for (let j = 0; j < n; j++) {
       // Put 0 and 1 randomly in the row
-      let spriteType = Math.round(Math.random());
+      let spriteType = level[i][j];
       arr[i][j] = {
-        _id: Math.round(Math.random()*1e+6),
+        _id: Math.round(Math.random() * 1e+6),
         type: spriteType,
         pastType: null,
         src: spriteCodes[spriteType]
       };
     }
   }
-  return arr;
+  return [arr, Math.round(par/2)];
 }
 
 // Return sprite type at position x, y
 const getSpriteAtPos = (x, y) => {
   return gameState.levelLayout[Math.floor(y / N)][Math.floor(x / N)];
+}
+
+// check win condition
+const evaluateWinCondition = () => {
+  let total = 0;
+  let known = []
+  for (let i = 0; i < gameState.levelLayout.length; i++) {
+    for (let j = 0; j < gameState.levelLayout.length; j++) {
+      if (gameState.levelLayout[i][j].type == 1) {
+        total++;
+        known = [i, j];
+      }
+    }
+  }
+
+  // run flood fill on grid
+  let visited = new Set();
+  let ones = new Queue();
+
+  i = known[0];
+  j = known[1];
+
+  ones.enqueue([i, j]);
+
+  let c = 0;
+
+  while (!ones.isEmpty()) {
+    [i, j] = ones.dequeue();
+    let id = gameState.levelLayout[i][j]._id;
+    if (visited.has(id)) continue;
+    visited.add(id);
+    let nei = neighbors(i, j, gameState.levelLayout.length);
+    for (let k = 0; k < nei.length; k++) {
+      let p = nei[k];
+      if (gameState.levelLayout[p[0]][p[1]].type == 1) {
+        ones.enqueue([p[0], p[1]]);
+      }
+    }
+  }
+  c = visited.size;
+
+  if (total == c) console.log('win');
+  
+  return false;
 }
 
 // Get the mouse position on the canvas AND decide what to do depending on the sprite selected
@@ -179,28 +252,33 @@ const getCursorPosition = (canvas, event) => {
 
   } else if (sprite.type == 0 || sprite.type == 1) { // If the sprite is not selected, and is of a selectable type
     if (gameState.selected != null) { // and if there is already a selected sprite
-      
+
       let neighbors = getNeighbors(gameState.selectedPosition.y, gameState.selectedPosition.x); // get neighbors of the selected sprite
 
-      for(let i = 0; i < neighbors.length; i++) { // loop over the neighbors
+      for (let i = 0; i < neighbors.length; i++) { // loop over the neighbors
         let point = neighbors[i];
-        if(point.x < 0 || point.y < 0 || point.x >= gameState.levelLayout.length || point.y >= gameState.levelLayout.length) {
+        if (point.x < 0 || point.y < 0 || point.x >= gameState.levelLayout.length || point.y >= gameState.levelLayout.length) {
           continue; // if the neighbor indices are out of bounds, continue
         }
-        if(gameState.levelLayout[point.x][point.y]._id == sprite._id) { // if the sprite is matched to be a neighbor
+        if (gameState.levelLayout[point.x][point.y]._id == sprite._id) { // if the sprite is matched to be a neighbor
 
           // swap the sprite with the selected one
           gameState.levelLayout[gameState.selectedPosition.y][gameState.selectedPosition.x] = sprite;
-    
+
           gameState.levelLayout[Math.floor(y / N)][Math.floor(x / N)] = {
             _id: gameState.selected._id,
             type: gameState.selected.pastType,
             pastType: null,
             src: spriteCodes[gameState.selected.pastType]
           };
-    
+
           gameState.selectedPosition = null;
           gameState.selected = null;
+
+          gameState.score++;
+          drawQueue.levelScore.toDraw = true;
+
+          evaluateWinCondition();
 
           break; // exit the loop
         }
@@ -230,11 +308,16 @@ const getCursorPosition = (canvas, event) => {
 //
 
 const gameLoop = () => {
-  
+
   if (gameState.levelLayout == null) {
-    gameState.levelLayout = getLevel(gameState.gridSize);
+    [gameState.levelLayout, gameState.levelPar] = getLevel(gameState.gridSize);
     gameState.levelCount++;
   }
+
+  // check if won
+  // if (evaluateWinCondition()) {
+  //   console.log('You won!');
+  // }
 
   if (drawQueue.background.toDraw) {
     let rect = drawQueue.background.rectSize;
@@ -242,14 +325,14 @@ const gameLoop = () => {
     ctx.fillRect(rect.from.x, rect.from.y, rect.to.x, rect.to.y)
     drawQueue.background.toDraw = false;
   }
-  
+
   if (drawQueue.levelScore.toDraw) {
     ctx.fillStyle = "black";
     let rect = drawQueue.levelScore.rectSize;
     ctx.clearRect(rect.from.x, rect.from.y, rect.to.x, rect.to.y);
     ctx.font = '24px Arial';
-    ctx.fillText(`#${gameState.levelCount}`, 10, 25);
-    ctx.fillText(`Score: ${gameState.score}`, 10, 54);
+    ctx.fillText(`Lv. ${gameState.levelCount} | Par: ${gameState.levelPar}`, 10, 25);
+    ctx.fillText(`Moves: ${gameState.score}`, 10, 55);
     drawQueue.levelScore.toDraw = false;
   }
 
@@ -263,7 +346,7 @@ const gameLoop = () => {
   }
 
   if (DEBUG) {
-    for(item in drawQueue) {
+    for (item in drawQueue) {
       ctx.strokeStyle = "red";
       drawRect(ctx, drawQueue[item].rectSize.from, drawQueue[item].rectSize.to);
     }

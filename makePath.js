@@ -90,7 +90,7 @@ const doSwaps = (arr) => {
           let temp = arr[i][j];
           arr[i][j] = arr[n[k][0]][n[k][1]];
           arr[n[k][0]][n[k][1]] = temp;
-          c++;
+          if(arr[i][j] == 1 || arr[n[k][0]][n[k][1]] == 1) c++;
         }
       }
     }

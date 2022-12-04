@@ -7,6 +7,8 @@ const h = canvas.height;
 const w = canvas.width;
 let ctx = canvas.getContext('2d');
 
+const audioComponent = document.getElementById('audio');
+
 //
 // --------- CUSTOM CLASSES ---------
 //
@@ -49,6 +51,12 @@ class Queue {
 // --------- GAME CONSTANTS ---------
 //
 
+//
+const audioData = {
+  current: 0,
+  tracks: ['carol.mp3']
+}
+
 // Game Colors
 const colors = {
   BG: "#ffeeb3",
@@ -72,6 +80,7 @@ const swappable = new Set([0,1,2,3]);
 
 // Game State
 const gameState = {
+  audioLoaded: false,
   gameWindowStart: new Point(w / 128, h / 128),
   gridSize: 10,
   levelCount: 0,
@@ -326,6 +335,13 @@ const getCursorPosition = (canvas, event) => {
 
 const gameLoop = () => {
 
+  if(audioComponent.paused) {
+    audioComponent.src = audioData.tracks[audioData.current % audioData.tracks.length];
+    audioData.current++;
+    audioComponent.play();
+    console.log('was paused, playing');
+  }
+
   if (gameState.levelLayout == null) {
     [gameState.levelLayout, gameState.levelPar] = getLevel(gameState.gridSize);
     gameState.levelCount++;
@@ -391,6 +407,8 @@ const gameLoop = () => {
 canvas.addEventListener('mousedown', (e) => {
   getCursorPosition(canvas, e);
 })
+
+audioComponent.volume = 0.5;
 
 // Start getting frames
 window.requestAnimationFrame(gameLoop);

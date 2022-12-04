@@ -68,11 +68,12 @@ const N = 32
 
 // Sprite Codes and Sources
 const spriteCodes = {
-  1: './snowflake.png',
   0: './tree-01.png',
+  1: './snowflake.png',
   2: './santa.png',
   3: './gift-01.png',
-  selected: './selected.png'
+  selected: './selected.png',
+  howto: './howto.png',
 }
 
 // Swappable Types
@@ -81,7 +82,7 @@ const swappable = new Set([0,1,2,3]);
 // Game State
 const gameState = {
   audioLoaded: false,
-  gameWindowStart: new Point(w / 128, h / 128),
+  gameWindowStart: new Point(w / 256, h / 128),
   gridSize: 10,
   levelCount: 0,
   levelLayout: null,
@@ -95,6 +96,20 @@ const DEBUG = true;
 
 // Bounding box for canvas areas to draw/update
 const drawQueue = {
+  howto: {
+    toDraw: true,
+    rectSize: {
+      from: new Point(w-310, 170),
+      to: new Point(w, h),
+    },
+  },
+  credits: {
+    toDraw: true,
+    rectSize: {
+      from: new Point(10, h - 30),
+      to: new Point(w / 3, h - 10),
+    },
+  },
   levelScore: {
     toDraw: true,
     rectSize: {
@@ -364,7 +379,7 @@ const gameLoop = () => {
     ctx.fillStyle = colors.BG;
     ctx.fillRect(rect.from.x, rect.from.y, rect.to.x, rect.to.y);
     ctx.fillStyle = colors.TEXT;
-    ctx.font = '24px Notable';
+    ctx.font = '24px "Secular One"';
     ctx.fillText(`Lv. ${gameState.levelCount} | Par: ${gameState.levelPar}`, 10, 25);
     ctx.fillText(`Moves: ${gameState.score}`, 10, 55);
     drawQueue.levelScore.toDraw = false;
@@ -386,9 +401,37 @@ const gameLoop = () => {
     }
   }
 
+  if (drawQueue.credits.toDraw) {
+    let rect = drawQueue.credits.rectSize;
+    ctx.fillStyle = colors.BG;
+    ctx.fillRect(rect.from.x, rect.from.y, rect.to.x, rect.to.y);
+    ctx.fillStyle = colors.TEXT;
+    ctx.fillStyle = "#AF1B3F";
+    ctx.font = '48px "Secular One"';
+    ctx.fillText(`CAROL WAVES`, rect.from.x, rect.from.y);
+    ctx.font = '12px "Secular One"';
+    ctx.fillText("https://arban.itch.io", rect.from.x + 5, rect.from.y+16);
+    drawQueue.credits.toDraw = false;
+  }
+
+  if (drawQueue.howto.toDraw) {
+    let rect = drawQueue.howto.rectSize;
+    ctx.fillStyle = colors.BG;
+    ctx.fillRect(rect.from.x, rect.from.y, rect.to.x, rect.to.y);
+    ctx.fillStyle = colors.TEXT;
+    ctx.font = '24px "Secular One"';
+    ctx.fillText("1. Snowflakes have to", rect.from.x + 5, rect.from.y+16);
+    ctx.fillText("be connected either", rect.from.x + 5, rect.from.y+40);
+    ctx.fillText("horizontally or vertically", rect.from.x + 5, rect.from.y+64);
+    ctx.fillText("2. No snowflake should", rect.from.x + 5, rect.from.y+98);
+    ctx.fillText("be at edge or corner", rect.from.x + 5, rect.from.y+122);
+    drawSprite(ctx, spriteCodes['howto'], new Point(rect.from.x + 50, rect.from.y+150), 130, 130);
+    drawQueue.howto.toDraw = false;
+  }
+
   if (DEBUG) {
     for (item in drawQueue) {
-      if (item == 'background' || item == 'levelScore') continue;
+      if (item != 'grid') continue;
       ctx.strokeStyle = colors.TEXT;
       ctx.lineWidth = 8;
       drawRect(ctx, drawQueue[item].rectSize.from, drawQueue[item].rectSize.to);

@@ -173,9 +173,9 @@ const doAlgo = (arr, size, source, destination) => {
       let roll = Math.random();
       if(paths.some(p => p[0] == i && p[1] == j)){
         final[i][j] = 1;
-      } else if (roll < 0.25) {
+      } else if (roll < 0.33) {
         final[i][j] = 2;
-      } else if (roll < 0.5) {
+      } else if (roll < 0.66) {
         final[i][j] = 3;
       }
     }
